@@ -62,7 +62,7 @@ main :: proc() {
 
   defer sdl.Quit()
 
-  window := sdl.CreateWindow("Solat", 100, 100, 800, 600, {.OPENGL, .MOUSE_FOCUS, .SHOWN, .RESIZABLE})
+  window := sdl.CreateWindow("Solat", 100, 100, 820, 620, {.OPENGL, .MOUSE_FOCUS, .SHOWN, .RESIZABLE})
   if window == nil {
     log.debugf("Error during window creation: %s", sdl.GetError())
     sdl.Quit()
@@ -131,6 +131,7 @@ main :: proc() {
   gl.ClearColor(1, 1, 1, 1)
 
   imgui_state := init_imgui_state(window)
+  set_imgui_style()
 
   running := true
   show_demo_window := false
@@ -184,8 +185,12 @@ main :: proc() {
 }
 
 main_window :: proc() {
+  @(static)
+  prayer: Prayer
+
   io := imgui.get_io()
   flags: imgui.Window_Flags = .NoDecoration | .AlwaysAutoResize | .NoSavedSettings | .NoFocusOnAppearing | .NoNav | .NoMove
+  flags |= len(prayer.PrayerTime) == 0 ? .NoScrollbar : .AlwaysVerticalScrollbar
 
   imgui.set_next_window_pos(imgui.Vec2{0, 0})
   imgui.set_next_window_size(imgui.Vec2{io.display_size.x, io.display_size.y})
@@ -336,12 +341,10 @@ main_window :: proc() {
   clicked: int = 0
   imgui.same_line()
 
-  if ok := imgui.button("Fetch", imgui.Vec2{60, 30}); ok {
+  if ok := imgui.button("Fetch", imgui.Vec2{0, 0}); ok {
     clicked += 1
   }
 
-  @(static)
-  prayer: Prayer
 
   if clicked & 1 == 1 {
     prayer = fetch_prayers(zones_code[selected])
@@ -362,6 +365,7 @@ main_window :: proc() {
   imgui.table_setup_column("Asar")
   imgui.table_setup_column("Maghrib")
   imgui.table_setup_column("Isya")
+
   imgui.table_headers_row()
 
   for i := 0; i < len(prayer.PrayerTime); i += 1 {
@@ -394,6 +398,7 @@ main_window :: proc() {
     imgui.table_set_column_index(7)
     imgui.text_colored(color, pt.Isha)
   }
+
 
   imgui.end_table()
 
@@ -471,4 +476,11 @@ fetch_prayers :: proc(zone: string) -> Prayer {
 
   //probably need to cleanup prayer var
   return prayer
+}
+
+set_imgui_style :: proc() {
+  style := imgui.get_style()
+
+  style.frame_padding = imgui.Vec2{7, 7}
+  style.cell_padding = imgui.Vec2{7, 7}
 }
